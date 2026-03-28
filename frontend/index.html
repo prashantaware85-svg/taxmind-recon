@@ -13,14 +13,11 @@
     .header p { font-size: 14px; color: #666; margin-top: 4px; }
     .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
     .upload-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; }
-    .upload-card label { font-size: 13px; color: #666; display: block; margin-bottom: 8px; }
-    .upload-box { border: 2px dashed #ccc; border-radius: 8px; padding: 1.5rem; text-align: center; cursor: pointer; background: #fafafa; position: relative; }
-    .upload-box:hover { border-color: #999; }
-    .upload-box input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
-    .upload-box .icon { font-size: 24px; display: block; margin-bottom: 6px; }
-    .upload-box span { font-size: 13px; color: #888; }
-    .file-name { font-size: 13px; font-weight: 500; color: #333; margin-top: 8px; min-height: 20px; }
-    .run-btn { width: 100%; padding: 12px; font-size: 15px; font-weight: 600; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 1.5rem; }
+    .upload-card label.title { font-size: 13px; color: #666; display: block; margin-bottom: 8px; }
+    .file-btn { display: block; width: 100%; padding: 2rem 1rem; border: 2px dashed #ccc; border-radius: 8px; background: #fafafa; text-align: center; cursor: pointer; font-size: 14px; color: #555; }
+    .file-btn:hover { border-color: #888; background: #f0f0f0; }
+    .file-name { font-size: 13px; font-weight: 500; color: #2e7d32; margin-top: 8px; min-height: 20px; }
+    .run-btn { width: 100%; padding: 14px; font-size: 15px; font-weight: 600; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 1.5rem; }
     .run-btn:hover { background: #333; }
     .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
@@ -45,7 +42,7 @@
     .download-btn:hover { background: #f5f5f5; }
     .empty { text-align: center; padding: 3rem; color: #888; font-size: 14px; }
     .loading { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
-    .error { text-align: center; padding: 2rem; color: #c62828; font-size: 14px; }
+    .error-msg { text-align: center; padding: 2rem; color: #c62828; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -57,21 +54,19 @@
 
     <div class="upload-grid">
       <div class="upload-card">
-        <label>Your Books (file 1)</label>
-        <div class="upload-box">
-          <input type="file" accept=".xlsx,.xls" id="file1" onchange="onFile(1,this)">
-          <span class="icon">📄</span>
-          <span>Click to upload Excel file</span>
-        </div>
+        <label class="title">Your Books (file 1)</label>
+        <button class="file-btn" onclick="document.getElementById('file1').click()">
+          📄 Click to upload Excel file
+        </button>
+        <input type="file" id="file1" accept=".xlsx,.xls" style="display:none" onchange="onFile(1,this)">
         <div class="file-name" id="name1"></div>
       </div>
       <div class="upload-card">
-        <label>Party's Books (file 2)</label>
-        <div class="upload-box">
-          <input type="file" accept=".xlsx,.xls" id="file2" onchange="onFile(2,this)">
-          <span class="icon">📄</span>
-          <span>Click to upload Excel file</span>
-        </div>
+        <label class="title">Party's Books (file 2)</label>
+        <button class="file-btn" onclick="document.getElementById('file2').click()">
+          📄 Click to upload Excel file
+        </button>
+        <input type="file" id="file2" accept=".xlsx,.xls" style="display:none" onchange="onFile(2,this)">
         <div class="file-name" id="name2"></div>
       </div>
     </div>
@@ -112,8 +107,8 @@
     function onFile(n, input) {
       const file = input.files[0];
       if (!file) return;
-      if (n === 1) { f1 = file; document.getElementById('name1').textContent = file.name; }
-      else { f2 = file; document.getElementById('name2').textContent = file.name; }
+      if (n === 1) { f1 = file; document.getElementById('name1').textContent = '✓ ' + file.name; }
+      else { f2 = file; document.getElementById('name2').textContent = '✓ ' + file.name; }
       document.getElementById('runBtn').disabled = !(f1 && f2);
     }
 
@@ -121,7 +116,7 @@
       const btn = document.getElementById('runBtn');
       btn.disabled = true;
       btn.textContent = 'Running...';
-      document.getElementById('resultsBody').innerHTML = '<div class="loading">Reconciling... please wait.</div>';
+      document.getElementById('resultsBody').innerHTML = '<div class="loading">⏳ Reconciling... please wait.</div>';
 
       const form = new FormData();
       form.append('file1', f1);
@@ -136,7 +131,7 @@
         resultsData = data.results || [];
         renderResults(resultsData);
       } catch (e) {
-        document.getElementById('resultsBody').innerHTML = '<div class="error">Error connecting to API. Please try again.</div>';
+        document.getElementById('resultsBody').innerHTML = '<div class="error-msg">❌ Error connecting to API. Please try again.</div>';
       }
 
       btn.disabled = false;
@@ -163,4 +158,31 @@
       }
 
       let rows = results.map((r, i) => {
-        const badge = r.stat
+        const badge = r.status === 'matched'
+          ? '<span class="badge badge-matched">Matched</span>'
+          : r.status === 'missing_in_party'
+          ? '<span class="badge badge-missing-party">Missing in Party</span>'
+          : '<span class="badge badge-missing-books">Missing in Books</span>';
+        return `<tr><td>${i+1}</td><td>${r.amount ?? '-'}</td><td>${badge}</td></tr>`;
+      }).join('');
+
+      document.getElementById('resultsBody').innerHTML = `
+        <table>
+          <thead><tr><th>#</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+    }
+
+    function downloadCSV() {
+      const rows = [['#','Amount','Status']];
+      resultsData.forEach((r,i) => rows.push([i+1, r.amount ?? '', r.status]));
+      const csv = rows.map(r => r.join(',')).join('\n');
+      const blob = new Blob([csv], {type:'text/csv'});
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'taxmind_recon_results.csv';
+      a.click();
+    }
+  </script>
+</body>
+</html>
