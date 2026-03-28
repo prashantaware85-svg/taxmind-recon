@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaxMind Recon</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f5f5f0; color: #1a1a1a; padding: 2rem; }
+    .container { max-width: 900px; margin: 0 auto; }
+    .header { padding-bottom: 1rem; border-bottom: 1px solid #e0e0e0; margin-bottom: 1.5rem; }
+    .header h1 { font-size: 24px; font-weight: 600; }
+    .header p { font-size: 14px; color: #666; margin-top: 4px; }
+    .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.5rem; }
+    .upload-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 1.25rem; }
+    .upload-card label { font-size: 13px; color: #666; display: block; margin-bottom: 8px; }
+    .upload-box { border: 2px dashed #ccc; border-radius: 8px; padding: 1.5rem; text-align: center; cursor: pointer; background: #fafafa; position: relative; }
+    .upload-box:hover { border-color: #999; }
+    .upload-box input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+    .upload-box .icon { font-size: 24px; display: block; margin-bottom: 6px; }
+    .upload-box span { font-size: 13px; color: #888; }
+    .file-name { font-size: 13px; font-weight: 500; color: #333; margin-top: 8px; min-height: 20px; }
+    .run-btn { width: 100%; padding: 12px; font-size: 15px; font-weight: 600; background: #1a1a1a; color: #fff; border: none; border-radius: 8px; cursor: pointer; margin-bottom: 1.5rem; }
+    .run-btn:hover { background: #333; }
+    .run-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+    .stat-card { background: #fff; border-radius: 8px; padding: 1rem; border: 1px solid #e0e0e0; }
+    .stat-card .label { font-size: 13px; color: #666; margin-bottom: 4px; }
+    .stat-card .value { font-size: 28px; font-weight: 600; }
+    .matched .value { color: #2e7d32; }
+    .missing-party .value { color: #e65100; }
+    .missing-books .value { color: #c62828; }
+    .results-section { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; overflow: hidden; margin-bottom: 1.5rem; }
+    .results-header { padding: 1rem 1.25rem; border-bottom: 1px solid #e0e0e0; display: flex; justify-content: space-between; align-items: center; }
+    .results-header h2 { font-size: 16px; font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { text-align: left; padding: 10px 1.25rem; font-size: 12px; font-weight: 600; color: #666; background: #fafafa; border-bottom: 1px solid #e0e0e0; }
+    td { padding: 10px 1.25rem; border-bottom: 1px solid #f0f0f0; }
+    tr:last-child td { border-bottom: none; }
+    .badge { display: inline-block; padding: 3px 10px; border-radius: 99px; font-size: 12px; font-weight: 500; }
+    .badge-matched { background: #e8f5e9; color: #2e7d32; }
+    .badge-missing-party { background: #fff3e0; color: #e65100; }
+    .badge-missing-books { background: #ffebee; color: #c62828; }
+    .download-btn { padding: 8px 16px; font-size: 13px; border: 1px solid #ccc; border-radius: 8px; background: #fff; cursor: pointer; }
+    .download-btn:hover { background: #f5f5f5; }
+    .empty { text-align: center; padding: 3rem; color: #888; font-size: 14px; }
+    .loading { text-align: center; padding: 2rem; color: #888; font-size: 14px; }
+    .error { text-align: center; padding: 2rem; color: #c62828; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>TaxMind Recon</h1>
+      <p>Debtor / Creditor Reconciliation Tool for Chartered Accountants</p>
+    </div>
+
+    <div class="upload-grid">
+      <div class="upload-card">
+        <label>Your Books (file 1)</label>
+        <div class="upload-box">
+          <input type="file" accept=".xlsx,.xls" id="file1" onchange="onFile(1,this)">
+          <span class="icon">📄</span>
+          <span>Click to upload Excel file</span>
+        </div>
+        <div class="file-name" id="name1"></div>
+      </div>
+      <div class="upload-card">
+        <label>Party's Books (file 2)</label>
+        <div class="upload-box">
+          <input type="file" accept=".xlsx,.xls" id="file2" onchange="onFile(2,this)">
+          <span class="icon">📄</span>
+          <span>Click to upload Excel file</span>
+        </div>
+        <div class="file-name" id="name2"></div>
+      </div>
+    </div>
+
+    <button class="run-btn" id="runBtn" onclick="runRecon()" disabled>Run Reconciliation</button>
+
+    <div id="statsSection" style="display:none;">
+      <div class="stats-grid">
+        <div class="stat-card matched">
+          <div class="label">Matched</div>
+          <div class="value" id="countMatched">0</div>
+        </div>
+        <div class="stat-card missing-party">
+          <div class="label">Missing in Party</div>
+          <div class="value" id="countParty">0</div>
+        </div>
+        <div class="stat-card missing-books">
+          <div class="label">Missing in Books</div>
+          <div class="value" id="countBooks">0</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results-section">
+      <div class="results-header">
+        <h2>Results</h2>
+        <button class="download-btn" id="dlBtn" onclick="downloadCSV()" style="display:none;">Download CSV</button>
+      </div>
+      <div id="resultsBody">
+        <div class="empty">Upload two Excel files and run reconciliation to see results.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let f1 = null, f2 = null, resultsData = [];
+
+    function onFile(n, input) {
+      const file = input.files[0];
+      if (!file) return;
+      if (n === 1) { f1 = file; document.getElementById('name1').textContent = file.name; }
+      else { f2 = file; document.getElementById('name2').textContent = file.name; }
+      document.getElementById('runBtn').disabled = !(f1 && f2);
+    }
+
+    async function runRecon() {
+      const btn = document.getElementById('runBtn');
+      btn.disabled = true;
+      btn.textContent = 'Running...';
+      document.getElementById('resultsBody').innerHTML = '<div class="loading">Reconciling... please wait.</div>';
+
+      const form = new FormData();
+      form.append('file1', f1);
+      form.append('file2', f2);
+
+      try {
+        const res = await fetch('https://taxmind-recon.onrender.com/reconciliation/', {
+          method: 'POST',
+          body: form
+        });
+        const data = await res.json();
+        resultsData = data.results || [];
+        renderResults(resultsData);
+      } catch (e) {
+        document.getElementById('resultsBody').innerHTML = '<div class="error">Error connecting to API. Please try again.</div>';
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Run Reconciliation';
+    }
+
+    function renderResults(results) {
+      let matched = 0, party = 0, books = 0;
+      results.forEach(r => {
+        if (r.status === 'matched') matched++;
+        else if (r.status === 'missing_in_party') party++;
+        else if (r.status === 'missing_in_books') books++;
+      });
+
+      document.getElementById('countMatched').textContent = matched;
+      document.getElementById('countParty').textContent = party;
+      document.getElementById('countBooks').textContent = books;
+      document.getElementById('statsSection').style.display = 'block';
+      document.getElementById('dlBtn').style.display = results.length ? 'block' : 'none';
+
+      if (!results.length) {
+        document.getElementById('resultsBody').innerHTML = '<div class="empty">No results found.</div>';
+        return;
+      }
+
+      let rows = results.map((r, i) => {
+        const badge = r.stat
