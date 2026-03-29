@@ -30,7 +30,7 @@ export default function Dashboard() {
             <p className="text-3xl font-bold text-orange-600">0</p>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button onClick={() => navigate('/clients')}
             className="bg-white rounded-lg shadow p-6 text-left hover:shadow-md transition">
             <h3 className="text-lg font-semibold text-blue-600">👥 Clients</h3>
@@ -38,8 +38,13 @@ export default function Dashboard() {
           </button>
           <button onClick={() => navigate('/reconciliation')}
             className="bg-white rounded-lg shadow p-6 text-left hover:shadow-md transition">
-            <h3 className="text-lg font-semibold text-green-600">📊 Reconciliation</h3>
-            <p className="text-gray-500 text-sm mt-1">Upload and match transactions</p>
+            <h3 className="text-lg font-semibold text-green-600">📊 Tally Reconciliation</h3>
+            <p className="text-gray-500 text-sm mt-1">Books vs Party statement match</p>
+          </button>
+          <button onClick={() => navigate('/gst-recon')}
+            className="bg-white rounded-lg shadow p-6 text-left hover:shadow-md transition">
+            <h3 className="text-lg font-semibold text-orange-600">🏛️ GST Reconciliation</h3>
+            <p className="text-gray-500 text-sm mt-1">Tally vs GSTR-2A/2B matching</p>
           </button>
         </div>
       </div>
