@@ -4,6 +4,7 @@ import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
 import ClientList from './pages/ClientList'
 import Reconciliation from './pages/Reconciliation'
+import GSTRecon from './pages/GSTRecon'
 
 function PrivateRoute({ children }) {
   const { user } = useAuth()
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
           <Route path="/clients" element={<PrivateRoute><ClientList /></PrivateRoute>} />
           <Route path="/reconciliation" element={<PrivateRoute><Reconciliation /></PrivateRoute>} />
+          <Route path="/gst-recon" element={<PrivateRoute><GSTRecon /></PrivateRoute>} />
           <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
       </BrowserRouter>
